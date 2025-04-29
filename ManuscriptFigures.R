@@ -1,8 +1,7 @@
 # Griffy Lake Manuscript Figures
 
 # Import Data
-setwd("W:/Projects/Griffy Woods Soil Fauna Project/Analyses")
-#setwd("C:/Users/gwndl/OneDrive/Documents/FrancoLab/Griffy")
+#setwd("W:/Projects/Griffy Woods Soil Fauna Project/Analyses")
 setwd("W:/Lab/Franco Lab/Projects/Griffy Woods Soil Fauna Project/Analyses")
 macrofauna <- read.csv("GW_SoilMacrofauna.csv")
 nematode <- read.csv("GW_Nematode.csv")
@@ -91,7 +90,7 @@ figure1_panel1
 
 # Panel 2: box plot of topog and fungi interaction
 figure1_panel2 <- ggplot(nematode, aes(x = landscape.position, y = total.nematodes)) +
-  geom_boxplot(lwd=0.5, aes(fill=mycorrhizal.fungi.type), show.legend = FALSE) +
+  geom_boxplot(lwd=0.5, aes(fill=mycorrhizal.fungi.type), show.legend = TRUE) +
   scale_fill_manual(values = c("#5773CCFF","#FFA319FF")) +
   mytheme + 
   labs(y = expression(paste("Total Nematode Abundance (ind. ",Kg^-1, "dry soil)")), x= "Topographic Position") +
@@ -100,8 +99,8 @@ figure1_panel2 <- ggplot(nematode, aes(x = landscape.position, y = total.nematod
 figure1_panel2
 
 # Figure 1 Full:
-figure1_panel2 + figure1_panel1 + plot_annotation(tag_levels = 'A') + 
-  plot_layout(widths = c(1, 2), axes = "collect") 
+figure1_panel1 + figure1_panel2 + plot_annotation(tag_levels = 'A') + 
+  plot_layout(widths = c(2, 1), axes = "collect", guides = "collect") 
 
 
 ### Figure 2 ###
@@ -173,7 +172,7 @@ figure3_panel3 <- ggplot(nematode, aes(x = season, y = channel.index)) +
   scale_x_discrete(labels = c("Late Winter", "Spring", "Summer", "Fall", "Early Winter")) +
   scale_fill_futurama() + 
   mytheme +
-  labs(y= "Index Value", x = "Season", subtitle = "Channel Index") 
+  labs(y= "Index Value", x = "Season", subtitle = "Channel Ratio") 
 
 figure3_panel3
 
