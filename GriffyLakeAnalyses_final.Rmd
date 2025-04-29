@@ -193,7 +193,7 @@ AIC(model.lifestyle.total) #587
 AICc(model.lifestyle.total) #591
 ```
 
-### Total Channel Index (Fungal Feeding : Bacterial Feeding Nematodes)
+### Total Channel Ratio (Fungal Feeding : Bacterial Feeding Nematodes)
 Best explained by season.
 ```{r Total channel index}
 model.channel.total <-lme(channel.index~season,
