@@ -180,7 +180,7 @@ AICc(model.predator.prey.total) #-412
 pairs(emmeans(model.predator.prey.total, "season"))
 ```
 
-### Total Root Feeding to Free Living Nematodes
+### Total Plant Parasite to Free Living Nematodes
 Best explained by season and the interaction between topography and tree functional type.
 ```{r Total lifestyle index}
 model.lifestyle.total <-lme(lifestyle.index~season+landscape.position+ mycorrhizal.fungi.type +

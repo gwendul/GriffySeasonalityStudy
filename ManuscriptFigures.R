@@ -77,11 +77,11 @@ nematode$fit_total <- fitted(model.total)
 nematode$fit_resid <- residuals(model.total)
 
 figure1_panel1 <- ggplot(nematode, aes(x=sample.date, y=total.nematodes)) + 
-  geom_jitter(size=3, aes(color = landscape.position, shape = mycorrhizal.fungi.type)) +
-  scale_color_manual(values = c("#5C88DAFF","#CC0C00FF")) + 
+  geom_jitter(size=3, aes(color = mycorrhizal.fungi.type, shape = landscape.position)) +
+  scale_color_manual(values = c("#5773CCFF","#FFA319FF")) + 
   scale_x_date(date_labels = "%b %d", date_breaks = "2 weeks") +
   labs(x = "Date", y = expression(paste("Total Nematode Abundance (ind. ",Kg^-1, "dry soil)"))) +
-  guides(color = guide_legend(title = "Topographic Position", order = 1), shape = guide_legend(title = "Tree Functional Type")) +
+  guides(color = guide_legend(title = "Tree Functional Type", order = 1), shape = guide_legend(title = "Topographic Position")) +
   mytheme +
   geom_smooth(aes(x= sample.date, y = fit_total), color = "black", linewidth = 2, method = 'lm', 
               se = TRUE, data = nematode, show.legend = FALSE) 
@@ -90,7 +90,7 @@ figure1_panel1
 
 # Panel 2: box plot of topog and fungi interaction
 figure1_panel2 <- ggplot(nematode, aes(x = landscape.position, y = total.nematodes)) +
-  geom_boxplot(lwd=0.5, aes(fill=mycorrhizal.fungi.type), show.legend = TRUE) +
+  geom_boxplot(lwd=0.5, aes(fill=mycorrhizal.fungi.type), show.legend = FALSE) +
   scale_fill_manual(values = c("#5773CCFF","#FFA319FF")) +
   mytheme + 
   labs(y = expression(paste("Total Nematode Abundance (ind. ",Kg^-1, "dry soil)")), x= "Topographic Position") +
@@ -101,6 +101,9 @@ figure1_panel2
 # Figure 1 Full:
 figure1_panel1 + figure1_panel2 + plot_annotation(tag_levels = 'A') + 
   plot_layout(widths = c(2, 1), axes = "collect", guides = "collect") 
+ggsave("Figure1_NematodeTotalAbundance.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
+
 
 
 ### Figure 2 ###
@@ -144,7 +147,10 @@ figure2_panel4
 figure2_panel1 + figure2_panel2 + figure2_panel3 + figure2_panel4 + 
   plot_annotation(caption = 'Nematodes are measured as ind. Kg\u207B\u00b9 dry soil', tag_levels = "A") +
   plot_layout(axes = "collect")
-  
+ggsave("Figure2_NematodeFeedingGuilds.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300, pointsize = 5)
+
+
 ### Figure 3 ###
 # Panel 1: Pred/Prey
 figure3_panel1 <- ggplot(nematode, aes(x = season, y = trophic.index)) +
@@ -162,7 +168,7 @@ figure3_panel2 <- ggplot(nematode, aes(x = season, y = lifestyle.index)) +
   scale_x_discrete(labels = c("Late Winter", "Spring", "Summer", "Fall", "Early Winter")) +
   scale_fill_futurama() + 
   mytheme +
-  labs(y= "Index Value", x = "Season", subtitle = "Root Feeding/Free Living Nematodes") 
+  labs(y= "Index Value", x = "Season", subtitle = "Plant Parasite/Free Living Nematodes") 
 
 figure3_panel2
 
@@ -189,6 +195,8 @@ figure3_panel4
 figure3_panel4 + figure3_panel3 + figure3_panel2 + figure3_panel1 + 
   plot_annotation(tag_levels = "A") +
   plot_layout(axes = "collect")
+ggsave("Figure3_NematodeIndices.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
 
 
 ### Figure 4 ###
@@ -309,6 +317,8 @@ figure4_panel3
 figure4_panel1 + (figure4_panel2 / figure4_panel3) + 
   plot_layout(axes = "collect", widths = c(3, 2)) +
   plot_annotation(tag_levels = 'A') 
+ggsave("Figure4_NematodeCommunity.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 15, height = 8, dpi = 300)
   
 
 ### Figure 5 ###
@@ -335,6 +345,8 @@ figure5_panel2
 # Figure 5 Full:
 figure5_panel1 + figure5_panel2 + plot_annotation(tag_levels = 'A') + 
    plot_layout(widths = c(2, 1), guides = "collect", axes = "collect")
+ggsave("Figure5_MacrofaunaTotalAbundance.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
 
 ### Figure 6 ###
 # 2 panels w sample type
@@ -359,7 +371,8 @@ figure6_panel2
 
 figure6_panel1 + figure6_panel2 + plot_annotation(tag_levels = 'A') +
   plot_layout(axes = "collect")
-
+ggsave("Figure6_MacrofaunaSampleType.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
 
 ### Figure 7 ###
 relative_abundance <- function(matrix) {
@@ -451,7 +464,9 @@ figure7_panel2
 # Figure 7 Combined:
 figure7_panel1 + figure7_panel2 + 
   plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = 'A') 
+  plot_annotation(tag_levels = 'A')
+ggsave("Figure7_MacrofaunaCommunity.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 15, height = 7, dpi = 300)
 
 # Figure 8
 ## Nematode community with precip and air temp
@@ -549,6 +564,8 @@ figure8_panel2
 
 figure8_panel1 + figure8_panel2  +
   plot_annotation(tag_levels = 'A') 
+ggsave("SupplementalFigure3_NematodeCommunitybyClimate.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 15, height = 7, dpi = 300)
 
 # Figure 9
 ## Macrofauna community with air temp and soil moisture
@@ -643,6 +660,8 @@ figure9_panel2
 
 figure9_panel1 + figure9_panel2  +
   plot_annotation(tag_levels = 'A') 
+ggsave("SupplementalFigure4_MacrofaunaCommunitybyClimate.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 15, height = 7, dpi = 300)
 
 #### Supplementary ####
 # Figure 1: Root Feeding Nematode Interaction with landscape and fungi
@@ -669,7 +688,7 @@ suppfig3 <- ggplot(nematode, aes(x = mycorrhizal.fungi.type, y = lifestyle.index
   scale_fill_manual(values = c("#5C88DAFF","#CC0C00FF")) + 
   guides(fill = guide_legend(title = "Topographic Position", order = 1), shape = guide_legend(title = "Fungi Type")) +
   mytheme + 
-  labs(y = "Index Value", x= "Tree Functional Type", subtitle = "Root Feeding/Free Living Nematodes")
+  labs(y = "Index Value", x= "Tree Functional Type", subtitle = "Plant Parasite/Free Living Nematodes")
 suppfig3
 
 # Figure 4: Simpsons fungi nematode
@@ -682,9 +701,11 @@ suppfig4 <- ggplot(nematode, aes(x = mycorrhizal.fungi.type, y = simpson)) +
 suppfig4
 
 suppfig1 + suppfig2 + suppfig3 + suppfig4 + 
-  plot_layout(guides = "collect", axes = "collect") +
+  plot_layout(guides = "collect") +
   plot_annotation(tag_levels = 'A') 
-  
+ggsave("SupplementaryFigure2_NematodeTrends.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
+
 # Figure 5: Climate variables over time w season breaks
 clim1 <- ggplot(nematode, aes(x=sample.date, y=soil.moisture)) +
   geom_area(fill = "cornflowerblue") +
@@ -713,3 +734,5 @@ clim4
 clim1 + clim2 + clim3 + clim4 + 
   plot_layout(axes = "collect_x") +
   plot_annotation(tag_levels = 'A') 
+ggsave("SupplementaryFigure1_ClimateVariables.tiff", plot= last_plot(), device = "tiff",
+       units = "in", width = 12, height = 7, dpi = 300)
