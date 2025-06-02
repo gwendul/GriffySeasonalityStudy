@@ -57,3 +57,7 @@ _GW_SoilMacrofauna.csv_ : Datatable containing all Macrofauna Data
 _GriffyLakeAnalyses_final.Rmd_ : R Markdown file of Final Models and Figures
 
 _ManuscriptFigures.R_ : Code for Figures
+
+## View R Markdown File Here:
+
+https://gwendul.github.io/GriffySeasonalityStudy/
