@@ -1,0 +1,598 @@
+---
+title: "Analyses for 'Seasonal variation of micro and macro soil invertebrate communities in a temperate forest'"
+authors: "Gwendolyn Lloyd and Kieran Ball"
+date: "2024-March-10"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(width = 600, digits = 3)
+
+# Import Data
+setwd("W:/Lab/Franco Lab/Projects/Griffy Woods Soil Fauna Project/Analyses")
+macrofauna <- read.csv("GW_SoilMacrofauna.csv")
+nematode <- read.csv("GW_Nematode.csv")
+
+# Misc. classifying
+macrofauna$sample.id <- as.factor(macrofauna$sample.id)
+macrofauna$week <- as.factor(macrofauna$week)
+macrofauna$sample.date <- as.Date(macrofauna$sample.date)
+macrofauna$sample.type <- as.factor(macrofauna$sample.type)
+macrofauna$mycorrhizal.fungi.type <- as.factor(macrofauna$mycorrhizal.fungi.type)
+macrofauna$landscape.position <- as.factor(macrofauna$landscape.position)
+macrofauna$tree.identity <- as.factor(macrofauna$tree.identity)
+macrofauna$season <- as.factor(macrofauna$season)
+macrofauna$season <- factor(macrofauna$season, levels = c("Winter.late", "Spring", "Summer", "Fall", "Winter.early"))
+
+nematode$sample.id <- as.factor(nematode$sample.id)
+nematode$week <- as.factor(nematode$week)
+nematode$sample.date <- as.Date(nematode$sample.date)
+nematode$mycorrhizal.fungi.type <- as.factor(nematode$mycorrhizal.fungi.type)
+nematode$landscape.position <- as.factor(nematode$landscape.position)
+nematode$tree.identity <- as.factor(nematode$tree.identity)
+nematode$season <- as.factor(nematode$season)
+nematode$season <- factor(nematode$season, levels = c("Winter.late", "Spring", "Summer", "Fall", "Winter.early"))
+nematode$season.1 <- factor(nematode$season.1, levels = c("Spring", "Summer", "Fall", "Winter"))
+
+# Packages Used
+library(ggplot2)
+library(nlme)
+library(emmeans)
+library(glmmTMB)
+library(piecewiseSEM)
+library(car)
+library(vegan)
+library(lme4)
+library(lmerTest)
+library(MASS)
+library(piecewiseSEM)
+library(AICcmodavg)
+library(dplyr)
+library(ggrepel)
+library(patchwork)
+
+## Nematode Groups
+nematode$om.pr=nematode$omnivorous+nematode$predators
+nematode$trophic.index=nematode$om.pr/(nematode$bacterial.feeders+nematode$fungal.feeders+nematode$plant.parasites.aph.)
+nematode$lifestyle.index=nematode$plant.parasites.aph./(nematode$om.pr+nematode$bacterial.feeders+nematode$fungal.feeders)
+nematode$channel.index=nematode$fungal.feeders/nematode$bacterial.feeders
+
+# Creating a merged season column
+library(dplyr)
+# Create the new column
+macrofauna <- macrofauna %>%
+  mutate(season.1 = case_when(
+    season == "Winter.early" ~ "Winter",
+    season == "Winter.late" ~ "Winter",
+    TRUE ~ as.factor(season)
+  ))
+
+macrofauna$season.1 <- factor(macrofauna$season.1, levels = c("Spring", "Summer", "Fall", "Winter"))
+```
+
+# Across Year Effects 
+## How does the seasonal variability impact different invertebrate communities?
+```{r Supplemental Figure 1, echo=FALSE, fig.cap="Climate Variables"}
+knitr::include_graphics("Figures/SupplementaryFigure1_ClimateVariables.png")
+```
+
+## Nematodes:
+### Total Nematodes
+Significant drivers were season and the interaction between topography and tree functional type.
+```{r total nematodes, comment = "", message = FALSE}
+model.total <-lme(total.nematodes~season+landscape.position+mycorrhizal.fungi.type+season:landscape.position+
+                     mycorrhizal.fungi.type:landscape.position+season:mycorrhizal.fungi.type+
+                     season:landscape.position:mycorrhizal.fungi.type, 
+                     random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.total)$tTable
+anova(model.total)
+AIC(model.total)
+rsquared(model.total)
+pairs(emmeans(model.total, specs= ~landscape.position*mycorrhizal.fungi.type))
+```
+
+```{r Figure 1, echo=FALSE, fig.cap="Total Nematode Abundance Time Series"}
+knitr::include_graphics("Figures/Figure1_NematodeTotalAbundance.png")
+```
+
+### Bacterial Feeding Nematodes
+Bacterial feeder abundance was best explained by season.
+```{r bacterial feeders, comment = ""}
+model.bf <-lme(bacterial.feeders~season+landscape.position+season:landscape.position+
+                 season:mycorrhizal.fungi.type+season:landscape.position:mycorrhizal.fungi.type, 
+               random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.bf)$tTable
+anova(model.bf)
+AIC(model.bf)
+rsquared(model.bf)
+pairs(emmeans(model.bf, specs= ~season))
+```
+
+### Fungal Feeding Nematodes
+Fungal feeder abundance was best explained by season.
+```{r fungal feeders, comment = ""}
+model.ff <-lme(fungal.feeders~season+landscape.position+ season:landscape.position+mycorrhizal.fungi.type:landscape.position+
+                 +season:landscape.position:mycorrhizal.fungi.type, 
+               random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.ff)$tTable
+anova(model.ff)
+AIC(model.ff) 
+rsquared(model.ff)
+pairs(emmeans(model.ff, specs= ~season))
+```
+
+### Plant Parasitic Nematodes
+Best explained by season and the interaction between topography and tree functional type.
+```{r root feeders, comment = "", message=FALSE}
+model.pp <-lme(plant.parasites.aph.~season+landscape.position+mycorrhizal.fungi.type + season:landscape.position+mycorrhizal.fungi.type:landscape.position+
+                  season:mycorrhizal.fungi.type+season:landscape.position:mycorrhizal.fungi.type, 
+                random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.pp)$tTable
+anova(model.pp)
+pairs(emmeans(model.pp, specs= ~landscape.position*mycorrhizal.fungi.type))
+AIC(model.pp)
+rsquared(model.pp)
+pairs(emmeans(model.pp, specs= ~season))
+```
+
+### Omnivorous and Predatory Nematodes
+A new group created with the sum of omnivorous and predatory nematodes. This group was best explained by season and topography.
+```{r omnivores, comment = ""}
+model.pred1 <-lme(om.pr~ season+landscape.position+ mycorrhizal.fungi.type + season:landscape.position + mycorrhizal.fungi.type:landscape.position + season:mycorrhizal.fungi.type + season:mycorrhizal.fungi.type:landscape.position, 
+                  random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.pred1)$tTable
+anova(model.pred1)
+AIC(model.pred1) #2145
+AICc(model.pred1) #2153
+rsquared(model.pred1) #37
+pairs(emmeans(model.pred1, specs= ~season))
+```
+
+```{r Figure 2, echo=FALSE, fig.cap="Nematode Trophic Groups by Season"}
+knitr::include_graphics("Figures/Figure2_NematodeFeedingGuilds.png")
+```
+
+### Nematode Diversity (Simpson Diversity Index)
+Simpson diversity was best explained by tree functional type and season
+```{r simpson}
+worm.simp1 <-lme(simpson~season+landscape.position+mycorrhizal.fungi.type +
+                  season:landscape.position+mycorrhizal.fungi.type:landscape.position+
+                  season:mycorrhizal.fungi.type+season:landscape.position:mycorrhizal.fungi.type, 
+                  random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(worm.simp1)$tTable
+anova(worm.simp1)
+AIC(worm.simp1)
+rsquared(worm.simp1)
+```
+
+### Predator-Prey Index
+No significant interactions, but best model contains season only.
+```{r total nematode predator-prey index}
+model.predator.prey.total <-lme(trophic.index~season, 
+                                random=list(sample.id=~1, tree.identity=~1), data = nematode)
+summary(model.predator.prey.total)$tTable
+anova(model.predator.prey.total)
+rsquared(model.predator.prey.total) #18
+AIC(model.predator.prey.total) #-413
+AICc(model.predator.prey.total) #-412
+pairs(emmeans(model.predator.prey.total, "season"))
+```
+
+### Total Plant Parasite to Free Living Nematodes
+Best explained by season and the interaction between topography and tree functional type.
+```{r Total lifestyle index}
+model.lifestyle.total <-lme(lifestyle.index~season+landscape.position+ mycorrhizal.fungi.type +
+                              season:landscape.position+mycorrhizal.fungi.type:landscape.position,
+                            random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode)
+summary(model.lifestyle.total)$tTable
+anova(model.lifestyle.total)
+rsquared(model.lifestyle.total) #19
+AIC(model.lifestyle.total) #587
+AICc(model.lifestyle.total) #591
+```
+
+### Total Channel Ratio (Fungal Feeding : Bacterial Feeding Nematodes)
+Best explained by season.
+```{r Total channel index}
+model.channel.total <-lme(channel.index~season,
+                          random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode)
+summary(model.channel.total)$tTable
+anova(model.channel.total)
+rsquared(model.channel.total) #29
+AIC(model.channel.total) #-166
+AICc(model.channel.total) #-165
+```
+
+```{r Figure 3, echo=FALSE, fig.cap="Nematode Indices by Season"}
+knitr::include_graphics("Figures/Figure3_NematodeIndices.png")
+```
+
+### Supplemental Figure With other interactions
+These are other significant interactions in the models that are highlighted in the results section.
+```{r Supp 1, echo=FALSE, fig.cap="Other Signficant Interactions in Nematode Models"}
+knitr::include_graphics("Figures/SupplementaryFigure2_NematodeTrends.png")
+```
+
+### Nematode Community Composition
+The matrix used for this was using nematode relative abundance (calculated from Total Nematodes, so accounting for unknown nematodes in the overall community)
+```{r nematode relative abundance, include=FALSE}
+# NMDS Analysis for Nematode Relative Abundance#
+# calculate relative abundance
+# to use this function you need to create a matrix with the taxa AND total abundance as the last column
+# it will then remove the total abundance column after calculating
+relative_abundance <- function(matrix) {
+  # Apply the function to each row
+  new_matrix <- t(apply(matrix, 1, function(row) row / row[length(row)]*100))
+  new_matrix <- new_matrix[, -ncol(new_matrix)]
+  return(new_matrix)
+}
+
+set.seed(1010)
+nematode_matrix <- data.frame(nematode[c(10,11,13,15,16,18)], row.names = nematode$unique.id)
+nematode_matrix.rel <- relative_abundance(nematode_matrix)
+nematode_matrix.rel <- as.data.frame(nematode_matrix.rel)
+
+Nematode_NMDS1=metaMDS(nematode_matrix.rel,k=4,trymax = 999)
+
+```
+
+```{r nematode community}
+#Running ANOVA of NMDS
+adonis2(nematode_matrix.rel ~ season * landscape.position * mycorrhizal.fungi.type, data=nematode,
+        permutations=999, by = "terms")
+# Season and landscape position signficant
+# landscape position and mycorrhizal fungi
+# season and landscape position alone
+
+adonis2(nematode_matrix.rel ~ PRECIP + AIRTEMP + soil.moisture, data=nematode,
+        permutations=999, by = "terms")
+# precipitation and air temp also drive community composition!
+```
+
+```{r Figure4, echo=FALSE, fig.cap="NMDS of Nematode Community Composition"}
+knitr::include_graphics("Figures/Figure4_NematodeCommunity.png")
+```
+```{r SuppFigure4, echo=FALSE, fig.cap="NMDS of Nematode Community Composition by Climate"}
+knitr::include_graphics("Figures/SupplementalFigure3_NematodeCommunitybyClimate.png")
+```
+
+## Macrofauna
+Initial models included season, sample type (ecological group), landscape position (topography), and mycorhizal type (tree functional type) + all interactions
+
+### Macrofauna Total Abundance
+Abundance driven by season, ecological group, and interaction between topography and tree functional type
+```{r total macrofauna}
+# model with sample type
+bug.total <-lme(sqrt(totalAbundance)~ season + sample.type + season:landscape.position +
+                  mycorrhizal.fungi.type:landscape.position, 
+                random=list(tree.identity=~1, sample.id=~1), data = macrofauna)
+summary(bug.total) 
+anova(bug.total)
+rsquared(bug.total)
+AIC(bug.total) #257
+AICc(bug.total) #281
+pairs(emmeans(bug.total, specs= ~season))
+```
+
+```{r Figure5, echo=FALSE, fig.cap="Total Macrofauna Abundance By Season"}
+knitr::include_graphics("Figures/Figure5_MacrofaunaTotalAbundance.png")
+```
+
+### Macrofauna Shannon Diversity
+Driven entirely by ecological group
+```{r macrofauna diversity}
+bug.shan <-lme(shannon~ sample.type, 
+               random=list(tree.identity=~1, sample.id=~1), data = macrofauna)
+summary(bug.shan)
+anova(bug.shan)
+rsquared(bug.shan)
+AIC(bug.shan) #42 
+AICc(bug.shan) #44
+```
+
+```{r Figure 6, echo=FALSE, fig.cap="Composition by Sample Type"}
+knitr::include_graphics("Figures/Figure6_MacrofaunaSampleType.png")
+```
+
+## Macrofauna By Sample Type
+Models included season, topography, and tree functional type + all interactions
+
+### Epigeic  Abundance
+No significant interactions in any model - this is the best using AIC
+```{r litter total}
+litter.total <-lme(sqrt(totalAbundance)~ landscape.position + mycorrhizal.fungi.type +
+                     mycorrhizal.fungi.type:landscape.position, 
+                   random=list(tree.identity=~1, sample.id=~1), data = macrofauna[macrofauna$sample.type == "Litter",])
+summary(litter.total)
+anova(litter.total)
+rsquared(litter.total)
+AIC(litter.total) #144
+AICc(litter.total) #153
+```
+
+### Epigeic Diversity (Shannon)
+Topography weakly trending towards significant (p=0.08)
+```{r litter shannon}
+litter.shan <-lme(shannon~ landscape.position, 
+                  random=list(tree.identity=~1, sample.id=~1), data = macrofauna[macrofauna$sample.type == "Litter",])
+summary(litter.shan)
+anova(litter.shan)
+rsquared(litter.shan)
+AIC(litter.shan) #29
+AICc(litter.shan) #33
+
+```
+
+### Endogeic Abundance
+Interaction (topography x tree functional type) is trending towards significant (p=0.08)
+```{r soil total}
+soil.total <-lme(sqrt(totalAbundance)~ mycorrhizal.fungi.type + mycorrhizal.fungi.type:landscape.position, 
+                 random=list(tree.identity=~1, sample.id=~1), data = macrofauna[macrofauna$sample.type == "Soil",])
+summary(soil.total)
+anova(soil.total)
+rsquared(soil.total)
+AIC(soil.total) #149
+AICc(soil.total) #158
+pairs(emmeans(soil.total, specs= ~landscape.position*mycorrhizal.fungi.type))
+```
+
+### Endogeic Shannon Diversity
+Not signficant, best model is null model
+```{r soil shannon}
+soil.shan <-lme(shannon~ landscape.position, 
+                random=list(tree.identity=~1, sample.id=~1), data = macrofauna[macrofauna$sample.type == "Soil",])
+summary(soil.shan)
+anova(soil.shan)
+rsquared(soil.shan)
+AIC(soil.shan) #11
+AICc(soil.shan) #18
+```
+
+### Macrofauna Community Composition
+```{r macrofauna relative abundance, include=FALSE}
+# NMDS Analysis for Nematode Relative Abundance #
+macrofauna_matrix <- data.frame(macrofauna[c(10:30,32)], row.names = macrofauna$unique.id)
+macrofauna_matrix.rel <- relative_abundance(macrofauna_matrix)
+macrofauna_matrix.rel <- as.data.frame(macrofauna_matrix.rel)
+
+library(dplyr)
+# Create the new column
+macrofauna <- macrofauna %>%
+  mutate(season.1 = case_when(
+    season == "Winter.early" ~ "Winter",
+    season == "Winter.late" ~ "Winter",
+    TRUE ~ as.factor(season)
+  ))
+macrofauna$season.1 <- factor(macrofauna$season.1, levels = c("Spring", "Summer", "Fall", "Winter"))
+
+set.seed(1010)
+Macrofauna_NMDS1=metaMDS(macrofauna_matrix.rel,k=4,trymax = 999)
+```
+
+```{r macrofauna community}
+# Running ANOVA of NMDS
+adonis2(macrofauna_matrix.rel ~ season * landscape.position * mycorrhizal.fungi.type * sample.type, 
+        data=macrofauna, permutations=999, by = "terms")
+# only season and sample type are significant :) (no interaction)
+
+# what about with season combined?
+adonis2(macrofauna_matrix.rel ~ season.1 * landscape.position * mycorrhizal.fungi.type * sample.type, 
+        data=macrofauna, permutations=999, by = "terms")
+# pretty much the same - weak relationship w fungi (p=0.1) and interaction between season and sample type (p=0.09)
+
+adonis2(macrofauna_matrix.rel ~ PRECIP + AIRTEMP + soil.moisture, 
+        data=macrofauna, permutations=999, by = "terms", na.action = na.omit)
+# Precip and soil moisture significant
+```
+
+```{r Figure 7, echo=FALSE, fig.cap="NMDS of Macrofauna Community Composition"}
+knitr::include_graphics("Figures/Figure7_MacrofaunaCommunity.png")
+```
+
+```{r Supp 2, echo=FALSE, fig.cap="NMDS of Macrofauna with Climate Variables"}
+knitr::include_graphics("Figures/SupplementalFigure4_MacrofaunaCommunitybyClimate.png")
+```
+
+
+## Within Season Nematode Analyses
+### What are the variables driving changes in nematode community composition within each season?
+Used as explanatory, but not highlighted in the results section
+```{r nematode subset, include=FALSE}
+# include any code you used to subset the nematode community here
+nematode.summer=subset(nematode, season %in% c("Summer"))
+nematode.spring=subset(nematode, season %in% c("Spring"))
+nematode.fall=subset(nematode, season %in% c("Fall"))
+nematode.winter=subset(nematode, season %in% c("Winter.late","Winter.early"))
+```
+
+## Predator-Prey Index
+### Winter Predator-Prey Index
+```{r predator-prey index winter}
+model.predator.prey.winter <-lme(trophic.index~ PRECIP, 
+                                 random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.winter) 
+summary(model.predator.prey.winter)$tTable
+anova(model.predator.prey.winter)
+rsquared(model.predator.prey.winter) #32
+AIC(model.predator.prey.winter) #-167
+AICc(model.predator.prey.winter) #-166
+```
+
+### Spring Predator-Prey Index
+```{r predator-prey index spring}
+model.predator.prey.spring <-lme(trophic.index~ PRECIP, 
+                                 random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.spring) 
+summary(model.predator.prey.spring)$tTable
+anova(model.predator.prey.spring)
+rsquared(model.predator.prey.spring) #92
+AIC(model.predator.prey.spring) #-121
+AICc(model.predator.prey.spring) #-118
+```
+
+### Summer Predator-Prey Index
+```{r predator-prey index summer}
+model.predator.prey.summer <-lme(trophic.index~ AIRTEMP + landscape.position,
+                                 random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.summer) 
+summary(model.predator.prey.summer)$tTable
+anova(model.predator.prey.summer)
+rsquared(model.predator.prey.summer) #36
+AIC(model.predator.prey.summer) #-140
+AICc(model.predator.prey.summer) #-137
+```
+
+### Fall Predator-Prey Index
+Best model was null model, but this is the next best - precip is not significant
+```{r predator-prey index fall}
+model.predator.prey.fall <-lme(trophic.index~ PRECIP,
+                               random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.fall) 
+summary(model.predator.prey.fall)$tTable
+anova(model.predator.prey.fall)
+rsquared(model.predator.prey.fall) #11
+AIC(model.predator.prey.fall) #-22
+AICc(model.predator.prey.fall) #-19
+```
+
+## Nematode Lifestyle Index
+This index is a ratio of plant parasite vs free living nematodes
+
+### Winter Lifestyle Index
+No significant variables
+```{r Lifestyle index winter}
+model.lifestyle.winter <-lme(lifestyle.index~ soil.moisture + mycorrhizal.fungi.type + landscape.position:mycorrhizal.fungi.type,
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.winter)
+summary(model.lifestyle.winter)$tTable
+anova(model.lifestyle.winter)
+rsquared(model.lifestyle.winter) #20
+AIC(model.lifestyle.winter) #219
+AICc(model.lifestyle.winter) #223
+```
+
+### Spring Lifestyle Index
+```{r Lifestyle index spring}
+model.lifestyle.spring <-lme(lifestyle.index~ landscape.position,
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.spring)
+summary(model.lifestyle.spring)$tTable
+anova(model.lifestyle.spring)
+rsquared(model.lifestyle.spring) #26
+AIC(model.lifestyle.spring) #113
+AICc(model.lifestyle.spring) #115
+```
+
+### Summer Lifestyle Index
+```{r Lifestyle index summer}
+model.lifestyle.summer <-lme(lifestyle.index~ PRECIP,
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.summer)
+summary(model.lifestyle.summer)$tTable
+anova(model.lifestyle.summer)
+rsquared(model.lifestyle.summer) #36
+AIC(model.lifestyle.summer) #127
+AICc(model.lifestyle.summer) #128
+```
+
+### Fall Lifestyle Index
+Best model is null - soil moisture not signficant and rsquared is hideous (best r-squared value from stepwise is from the full model)
+```{r Lifestyle index fall}
+model.lifestyle.fall <-lme(lifestyle.index~ soil.moisture,
+                           random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.fall)
+summary(model.lifestyle.fall)$tTable
+anova(model.lifestyle.fall)
+rsquared(model.lifestyle.fall) #.5
+AIC(model.lifestyle.fall) #117
+AICc(model.lifestyle.fall) #120
+```
+
+## Nematode Channel Index
+Ratio of fungal feeding and bacterial feeding nematodes
+### Winter Channel Index
+```{r Channel index winter}
+model.channel.winter <-lme(channel.index~ soil.moisture, 
+                           random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.winter)
+summary(model.channel.winter)$tTable
+anova(model.channel.winter)
+rsquared(model.channel.winter) #10
+AIC(model.channel.winter) #-85
+AICc(model.channel.winter) #-84
+```
+
+### Spring Channel Index
+```{r Channel index spring}
+model.channel.spring <-lme(channel.index~ landscape.position, 
+                           random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.spring)
+summary(model.channel.spring)$tTable
+anova(model.channel.spring)
+rsquared(model.channel.spring) #70
+AIC(model.channel.spring) #-102
+AICc(model.channel.spring) #-100
+```
+
+### Summer Channel Index
+Best model is null model - no significant predictor variables
+```{r Channel index summer}
+model.channel.summer <-lme(channel.index~ AIRTEMP, 
+                           random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.summer)
+summary(model.channel.summer)$tTable
+anova(model.channel.summer)
+rsquared(model.channel.summer) #61
+AIC(model.channel.summer) #-116
+AICc(model.channel.summer) #-115
+```
+
+### Fall Channel Index
+Best model is null, no signficant predictor variables
+```{r Channel index fall}
+model.channel.fall <-lme(channel.index~AIRTEMP, 
+                         random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.fall)
+summary(model.channel.fall)$tTable
+anova(model.channel.fall)
+rsquared(model.channel.fall) #17
+AIC(model.channel.fall) #22
+AICc(model.channel.fall) #25
+```
+
+## Nematode Diversity (Simpson Diversity Index)
+### Winter Nematode Diversity
+```{r nematode diversity late winter}
+model.diversity.winter <-lme(simpson~ soil.moisture, 
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.winter)
+summary(model.diversity.winter)$tTable
+anova(model.diversity.winter) 
+rsquared(model.diversity.winter) #25
+AIC(model.diversity.winter) #-60
+AICc(model.diversity.winter) #-59
+```
+
+### Spring Nematode Diversity
+```{r nematode diversity spring}
+model.diversity.spring <-lme(simpson~ soil.moisture + landscape.position, 
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.spring)
+summary(model.diversity.spring)$tTable
+anova(model.diversity.spring)
+rsquared(model.diversity.spring) #28
+AIC(model.diversity.spring) #-46
+AICc(model.diversity.spring) #-43
+```
+ 
+### Summer Nematode Diversity
+Best model is null, no significant variables - but in worse AIC model, AIRTEMP trends towards signficant (May rerun this or ask input!)
+```{r nematode diversity summer}
+model.diversity.summer <-lme(simpson~ mycorrhizal.fungi.type, 
+                             random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.summer)
+summary(model.diversity.summer)$tTable
+anova(model.diversity.summer)
+rsquared(model.diversity.summer) #30
+AIC(model.diversity.summer) #-99
+AICc(model.diversity.summer) #-97
+```
+
+### Fall Nematode Diversity
+Best model is null, no signficant predictor variables
+```{r nematode diversity fall}
+model.diversity.fall <-lme(simpson~ soil.moisture, 
+                           random=list(sample.id=~1, tree.identity=~1), na.action = na.omit, data = nematode.fall)
+summary(model.diversity.fall)$tTable
+anova(model.diversity.fall)
+rsquared(model.diversity.fall) #1
+AIC(model.diversity.fall) #-14
+AICc(model.diversity.fall) #-11
+```
