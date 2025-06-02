@@ -1,7 +1,7 @@
 # Data Repository for Soil Micro and Macro Fauna at Griffy Woods IURTP
 Scripts, Workflows, and Data associated with the manuscript:
 
-_Seasonal variation of micro and macro soil invertebrate communities in a temperate forest_ in review
+_Seasonal variation of micro and macro soil invertebrate communities in a temperate forest_, in review
 
 ## Authors
 Kieran C Ball
