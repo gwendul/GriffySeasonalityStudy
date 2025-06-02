@@ -60,4 +60,4 @@ _ManuscriptFigures.R_ : Code for Figures
 
 ## View R Markdown File Here:
 
-https://gwendul.github.io/GriffySeasonalityStudy/
+return for link - can view in docs folder currently
